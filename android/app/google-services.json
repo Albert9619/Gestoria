@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1027544668996",
+    "project_id": "gestoria-569c8",
+    "storage_bucket": "gestoria-569c8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1027544668996:android:ffec2f23744d1a0f5b5511",
+        "android_client_info": {
+          "package_name": "com.gestoria"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-IT62z2yDpOBGE9cEj9KvdrJ1C1HgNBM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

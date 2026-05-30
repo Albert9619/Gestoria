@@ -1,0 +1,143 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────
+    // FUNCIONES AUXILIARES
+    // ─────────────────────────────────────────────
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Lee el perfil del usuario autenticado desde /usuarios/{uid}
+    function userData() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isAuth() && userData().rol == 'superadmin';
+    }
+
+    function isAdmin() {
+      return isAuth() && userData().rol == 'admin';
+    }
+
+    function isMesera() {
+      return isAuth() && userData().rol == 'mesera';
+    }
+
+    // El usuario pertenece a este negocio
+    function isAdminOf(negocioId) {
+      return isAdmin() && userData().negocioId == negocioId;
+    }
+
+    function isMeseraOf(negocioId) {
+      return isMesera() && userData().negocioId == negocioId;
+    }
+
+    // Admin o mesera del mismo negocio
+    function isWorkerOf(negocioId) {
+      return isAdminOf(negocioId) || isMeseraOf(negocioId);
+    }
+
+    // ─────────────────────────────────────────────
+    // /usuarios/{userId}
+    // ─────────────────────────────────────────────
+    match /usuarios/{userId} {
+      // Cada usuario lee su propio perfil (necesario para el routing al entrar)
+      allow read: if isAuth() && request.auth.uid == userId;
+      // Superadmin ve todos los perfiles
+      allow read: if isSuperAdmin();
+      // Registro: el usuario crea su propio documento por primera vez
+      allow create: if isAuth() && request.auth.uid == userId;
+      // El usuario actualiza su propio perfil
+      allow update: if isAuth() && request.auth.uid == userId;
+      // El admin puede crear/actualizar perfiles de meseras
+      allow write: if isAdmin();
+      // Superadmin control total
+      allow write: if isSuperAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // /codigos/{codigo}
+    // Lookup: código de negocio → negocioId (para login de meseras)
+    // ─────────────────────────────────────────────
+    match /codigos/{codigo} {
+      // Cualquier usuario autenticado puede leer (lo necesita el login de meseras)
+      allow read: if isAuth();
+      // Se crea durante el registro del negocio
+      allow create: if isAuth();
+      // Solo superadmin puede modificar o borrar
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // /negocios/{negocioId}
+    // ─────────────────────────────────────────────
+    match /negocios/{negocioId} {
+      // Superadmin ve y modifica todos los negocios
+      allow read, write: if isSuperAdmin();
+      // Admin y mesera del negocio pueden leer su propio negocio
+      allow read: if isWorkerOf(negocioId);
+      // Admin puede actualizar los datos de su negocio
+      allow update: if isAdminOf(negocioId);
+      // Cualquier usuario autenticado puede crear un negocio (registro)
+      allow create: if isAuth();
+
+      // ── productos ──────────────────────────────
+      match /productos/{productoId} {
+        // Admin y mesera pueden leer
+        allow read: if isWorkerOf(negocioId) || isSuperAdmin();
+        // Solo admin crea y elimina
+        allow create, delete: if isAdminOf(negocioId) || isSuperAdmin();
+        // Admin y mesera pueden actualizar (mesera descuenta stock al vender)
+        allow update: if isWorkerOf(negocioId) || isSuperAdmin();
+      }
+
+      // ── mesas ──────────────────────────────────
+      match /mesas/{mesaId} {
+        // Admin y mesera leen
+        allow read: if isWorkerOf(negocioId) || isSuperAdmin();
+        // Admin crea y elimina; admin y mesera ocupan/liberan
+        allow write: if isWorkerOf(negocioId) || isSuperAdmin();
+      }
+
+      // ── clientes y consumos ─────────────────────
+      match /clientes/{clienteId} {
+        allow read, write: if isWorkerOf(negocioId) || isSuperAdmin();
+
+        match /consumos/{consumoId} {
+          allow read, write: if isWorkerOf(negocioId) || isSuperAdmin();
+        }
+      }
+
+      // ── ventas (registro permanente de lo vendido) ──
+      match /ventas/{ventaId} {
+        allow read, write: if isWorkerOf(negocioId) || isSuperAdmin();
+      }
+
+      // ── turnos ─────────────────────────────────
+      match /turnos/{turnoId} {
+        allow read, write: if isWorkerOf(negocioId) || isSuperAdmin();
+      }
+
+      // ── usuarios del negocio (meseras) ─────────
+      match /usuarios/{userId} {
+        // Admin y mesera leen la lista de compañeros
+        allow read: if isWorkerOf(negocioId) || isSuperAdmin();
+        // Admin gestiona meseras
+        allow write: if isAdminOf(negocioId) || isSuperAdmin();
+        // El usuario se registra a sí mismo dentro del negocio
+        allow create: if isAuth() && request.auth.uid == userId;
+      }
+
+      // ── entradas de stock ───────────────────────
+      match /entradas_stock/{entradaId} {
+        allow read: if isWorkerOf(negocioId) || isSuperAdmin();
+        // Solo admin registra entradas de stock
+        allow write: if isAdminOf(negocioId) || isSuperAdmin();
+      }
+    }
+  }
+}
