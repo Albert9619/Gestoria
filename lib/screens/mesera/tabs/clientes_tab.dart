@@ -63,11 +63,6 @@ class ClientesTab extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: GradientFAB(
-        onPressed: () => _mostrarCrearCliente(context),
-        icon: Icons.person_add_outlined,
-        label: 'Nuevo cliente',
-      ),
     );
   }
 
@@ -76,7 +71,7 @@ class ClientesTab extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CrearClienteSheet(
+      builder: (_) => CrearClienteSheet(
         negocioId: negocioId,
         turnoId: turnoId,
         meseraId: meseraId,
@@ -178,13 +173,13 @@ class _ClienteCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 // BOTTOM SHEET: CREAR CLIENTE
 // ─────────────────────────────────────────────
-class _CrearClienteSheet extends StatefulWidget {
+class CrearClienteSheet extends StatefulWidget {
   final String negocioId;
   final String turnoId;
   final String meseraId;
   final String meseraNombre;
 
-  const _CrearClienteSheet({
+  const CrearClienteSheet({
     required this.negocioId,
     required this.turnoId,
     required this.meseraId,
@@ -192,10 +187,10 @@ class _CrearClienteSheet extends StatefulWidget {
   });
 
   @override
-  State<_CrearClienteSheet> createState() => _CrearClienteSheetState();
+  State<CrearClienteSheet> createState() => CrearClienteSheetState();
 }
 
-class _CrearClienteSheetState extends State<_CrearClienteSheet> {
+class CrearClienteSheetState extends State<CrearClienteSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nombreCtrl = TextEditingController();
   final _telefonoCtrl = TextEditingController();

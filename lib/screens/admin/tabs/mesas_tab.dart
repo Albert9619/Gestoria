@@ -61,11 +61,6 @@ class MesasTab extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: GradientFAB(
-        onPressed: () => _mostrarCrearMesa(context),
-        icon: Icons.add_rounded,
-        label: 'Nueva mesa',
-      ),
     );
   }
 
@@ -74,7 +69,7 @@ class MesasTab extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CrearMesaSheet(negocioId: negocioId),
+      builder: (_) => CrearMesaSheet(negocioId: negocioId),
     );
   }
 }
@@ -890,15 +885,15 @@ class _EditarMesaSheetState extends State<_EditarMesaSheet> {
 // ─────────────────────────────────────────────
 // CREAR MESA
 // ─────────────────────────────────────────────
-class _CrearMesaSheet extends StatefulWidget {
+class CrearMesaSheet extends StatefulWidget {
   final String negocioId;
-  const _CrearMesaSheet({required this.negocioId});
+  const CrearMesaSheet({required this.negocioId});
 
   @override
-  State<_CrearMesaSheet> createState() => _CrearMesaSheetState();
+  State<CrearMesaSheet> createState() => CrearMesaSheetState();
 }
 
-class _CrearMesaSheetState extends State<_CrearMesaSheet> {
+class CrearMesaSheetState extends State<CrearMesaSheet> {
   final _numCtrl = TextEditingController();
   String _tipo = 'billar';
   bool _loading = false;

@@ -60,11 +60,6 @@ class ProductosTab extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _mostrarCrearProducto(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Nuevo producto'),
-      ),
     );
   }
 
@@ -73,7 +68,7 @@ class ProductosTab extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CrearProductoSheet(negocioId: negocioId),
+      builder: (_) => CrearProductoSheet(negocioId: negocioId),
     );
   }
 }
@@ -93,16 +88,32 @@ class _ProductoCard extends StatelessWidget {
     final stockBajo = producto.esFisico &&
         producto.stockActual > 0 &&
         producto.stockActual <= 5;
-    final accentColor =
-        producto.esFisico ? AppColors.primary : AppColors.accent;
+    final stockMedio = producto.esFisico &&
+        producto.stockActual > 5 &&
+        producto.stockActual <= 20;
 
-    return Card(
+    // Color según nivel de stock
+    Color stockColor = AppColors.success;
+    if (sinStock) stockColor = AppColors.error;
+    else if (stockBajo) stockColor = AppColors.error;
+    else if (stockMedio) stockColor = AppColors.amber;
+
+    final accentColor =
+        producto.esFisico ? stockColor : AppColors.accent;
+
+    // Valor de barra: 0-1 (referencia 30 unidades = lleno)
+    final barValue = producto.esFisico
+        ? (producto.stockActual / 30).clamp(0.0, 1.0)
+        : 1.0;
+
+    return AccentCard(
+      accentColor: accentColor,
       child: Padding(
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         child: Row(
           children: [
-            // Ícono de tipo
+            // Ícono con color de estado
             Container(
               width: 44,
               height: 44,
@@ -119,7 +130,7 @@ class _ProductoCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            // Nombre + subtítulo
+            // Nombre + barra de stock
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,45 +146,58 @@ class _ProductoCard extends StatelessWidget {
                           : TextDecoration.lineThrough,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        producto.esFisico
-                            ? 'Stock: ${producto.stockActual}'
-                            : 'Servicio',
-                        style: AppTextStyles.labelSm,
+                  const SizedBox(height: 4),
+                  if (producto.esFisico) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                      child: LinearProgressIndicator(
+                        value: barValue,
+                        backgroundColor:
+                            stockColor.withValues(alpha: 0.12),
+                        valueColor:
+                            AlwaysStoppedAnimation(stockColor),
+                        minHeight: 5,
                       ),
-                      if (sinStock || stockBajo) ...[
-                        const SizedBox(width: AppSpacing.xxs),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: (sinStock ? AppColors.error : AppColors.amber)
-                                .withValues(alpha: 0.12),
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.sm),
-                          ),
-                          child: Text(
-                            sinStock ? 'Sin stock' : 'Stock bajo',
-                            style: AppTextStyles.labelXs.copyWith(
-                              color: sinStock
-                                  ? AppColors.error
-                                  : AppColors.amber,
-                              fontWeight: FontWeight.w700,
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Text(
+                          '${producto.stockActual} unidades',
+                          style: AppTextStyles.labelXs,
+                        ),
+                        if (sinStock || stockBajo) ...[
+                          const SizedBox(width: AppSpacing.xxs),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: stockColor.withValues(alpha: 0.12),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.sm),
+                            ),
+                            child: Text(
+                              sinStock ? '⚠ Sin stock' : '⚠ Stock bajo',
+                              style: AppTextStyles.labelXs.copyWith(
+                                color: stockColor,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ],
                   ),
+                ] else ...[
+                  Text('Servicio · Disponible',
+                      style: AppTextStyles.labelXs),
+                ],
                 ],
               ),
             ),
             // Precio + menú
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   formatCOP(producto.precio),
@@ -339,15 +363,15 @@ class _ProductoCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 // BOTTOM SHEET: CREAR PRODUCTO
 // ─────────────────────────────────────────────
-class _CrearProductoSheet extends StatefulWidget {
+class CrearProductoSheet extends StatefulWidget {
   final String negocioId;
-  const _CrearProductoSheet({required this.negocioId});
+  const CrearProductoSheet({required this.negocioId});
 
   @override
-  State<_CrearProductoSheet> createState() => _CrearProductoSheetState();
+  State<CrearProductoSheet> createState() => CrearProductoSheetState();
 }
 
-class _CrearProductoSheetState extends State<_CrearProductoSheet> {
+class CrearProductoSheetState extends State<CrearProductoSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nombreCtrl = TextEditingController();
   final _precioCtrl = TextEditingController();

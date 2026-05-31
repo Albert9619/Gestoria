@@ -64,6 +64,21 @@ class _MeseraHomeState extends State<MeseraHome> {
     }
   }
 
+  void _mostrarCrearCliente(BuildContext context) {
+    if (_turnoActual == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CrearClienteSheet(
+        negocioId: widget.negocioId,
+        turnoId: _turnoActual!.id,
+        meseraId: widget.meseraId,
+        meseraNombre: widget.meseraNombre,
+      ),
+    );
+  }
+
   Future<void> _logout() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -147,13 +162,19 @@ class _MeseraHomeState extends State<MeseraHome> {
         ),
         title: Row(
           children: [
-            // Avatar de la mesera
-            CircleAvatar(
-              radius: 17,
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
-              child: Text(inicial,
-                  style: AppTextStyles.titleXs
-                      .copyWith(color: Colors.white)),
+            // Logo
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 28,
+                fit: BoxFit.contain,
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Column(
@@ -191,6 +212,14 @@ class _MeseraHomeState extends State<MeseraHome> {
           ),
         ],
       ),
+      extendBody: true,
+      floatingActionButton: (_tabIndex == 0 && _turnoActual != null)
+          ? GradientFAB(
+              onPressed: () => _mostrarCrearCliente(context),
+              icon: Icons.person_add_outlined,
+              label: 'Nuevo cliente',
+            )
+          : null,
       body: _turnoActual == null
           ? const Center(child: Text('Error al cargar el turno'))
           : IndexedStack(
@@ -208,7 +237,6 @@ class _MeseraHomeState extends State<MeseraHome> {
                 ),
               ],
             ),
-      extendBody: true,
       bottomNavigationBar: FloatingNavBar(
         currentIndex: _tabIndex,
         onTap: (i) => setState(() => _tabIndex = i),
